@@ -11,6 +11,9 @@ const bookRoutes = require('./routes/books');
 const categoryRoutes = require('./routes/categories');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/orders');
+const adminBookRoutes = require('./routes/admin/books');
+const adminOrderRoutes = require('./routes/admin/orders');
+const adminCartRoutes = require('./routes/admin/carts');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +37,9 @@ app.use('/api/books', bookRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/admin/books', adminBookRoutes);
+app.use('/api/admin/orders', adminOrderRoutes);
+app.use('/api/admin/carts', adminCartRoutes);
 
 async function start() {
   await connectDB();

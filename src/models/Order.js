@@ -48,6 +48,7 @@ function orderToClient(doc) {
     _id: id,
     id,
     status: doc.status,
+    fullName: doc.fullName,
     createdAt: doc.createdAt?.toISOString?.() || doc.createdAt,
     paymentMethod: doc.paymentMethod,
     shippingAddress: doc.address,
