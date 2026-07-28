@@ -37,6 +37,7 @@ function userToClient(doc) {
     lastName: obj.lastName || '',
     role: obj.role,
     avatar: obj.avatar || '',
+    createdAt: obj.createdAt?.toISOString?.() || obj.createdAt || null,
   };
 }
 

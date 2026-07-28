@@ -14,6 +14,8 @@ const orderRoutes = require('./routes/orders');
 const adminBookRoutes = require('./routes/admin/books');
 const adminOrderRoutes = require('./routes/admin/orders');
 const adminCartRoutes = require('./routes/admin/carts');
+const adminUserRoutes = require('./routes/admin/users');
+const adminStatsRoutes = require('./routes/admin/stats');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,6 +42,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/admin/books', adminBookRoutes);
 app.use('/api/admin/orders', adminOrderRoutes);
 app.use('/api/admin/carts', adminCartRoutes);
+app.use('/api/admin/users', adminUserRoutes);
+app.use('/api/admin/stats', adminStatsRoutes);
 
 async function start() {
   await connectDB();
