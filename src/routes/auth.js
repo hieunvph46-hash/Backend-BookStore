@@ -67,26 +67,53 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body || {};
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Vui lòng nhập tên đăng nhập/email và mật khẩu' });
+    const { username, email, password } = req.body || {};
+
+    // chấp nhận cả username hoặc email
+    const login = username || email;
+
+    if (!login || !password) {
+      return res.status(400).json({
+        error: 'Vui lòng nhập tên đăng nhập/email và mật khẩu'
+      });
     }
-    const normalized = String(username).trim().toLowerCase();
+
+    const normalized = String(login).trim().toLowerCase();
+
     const user = await User.findOne({
-      $or: [{ username: normalized }, { email: normalized }]
+      $or: [
+        { username: normalized },
+        { email: normalized }
+      ]
     });
-    if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ error: 'Tên đăng nhập/email hoặc mật khẩu không đúng' });
+
+    if (!user) {
+      return res.status(401).json({
+        error: 'Tên đăng nhập hoặc mật khẩu không đúng'
+      });
     }
+
+    const ok = await user.comparePassword(password);
+
+    if (!ok) {
+      return res.status(401).json({
+        error: 'Tên đăng nhập hoặc mật khẩu không đúng'
+      });
+    }
+
     const token = signToken(user._id.toString());
+
     return res.json({
       message: 'Đăng nhập thành công',
       token,
-      user: userToClient(user),
+      user: userToClient(user)
     });
+
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Lỗi server' });
+    return res.status(500).json({
+      error: 'Lỗi server'
+    });
   }
 });
 
