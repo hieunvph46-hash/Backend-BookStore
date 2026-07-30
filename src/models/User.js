@@ -8,7 +8,8 @@ const userSchema = new mongoose.Schema(
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
     password: { type: String, required: true, minlength: 6 },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    role: { type: String, enum: ['user', 'staff', 'admin'], default: 'user' },
+    status: { type: String, enum: ['active', 'banned', 'suspended'], default: 'active' },
     avatar: { type: String, default: '' },
   },
   { timestamps: true }
@@ -36,6 +37,7 @@ function userToClient(doc) {
     firstName: obj.firstName || '',
     lastName: obj.lastName || '',
     role: obj.role,
+    status: obj.status || 'active',
     avatar: obj.avatar || '',
     createdAt: obj.createdAt?.toISOString?.() || obj.createdAt || null,
   };

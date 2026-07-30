@@ -21,7 +21,7 @@ function orderToAdminClient(doc) {
       lastName: doc.user.lastName,
     };
   }
-  return { ...base, user };
+  return { ...base, user, city: doc.city, notes: doc.notes, shippingFee: doc.shippingFee, paymentMethod: doc.paymentMethod, phone: doc.phone, address: doc.address };
 }
 
 router.get('/', async (req, res) => {
@@ -32,6 +32,14 @@ router.get('/', async (req, res) => {
     const filter = {};
     if (req.query.status && STATUSES.includes(req.query.status)) {
       filter.status = req.query.status;
+    }
+    if (req.query.search) {
+      const q = String(req.query.search).trim();
+      filter.$or = [
+        { fullName: { $regex: q, $options: 'i' } },
+        { phone: { $regex: q, $options: 'i' } },
+        { address: { $regex: q, $options: 'i' } },
+      ];
     }
 
     const [orders, total] = await Promise.all([

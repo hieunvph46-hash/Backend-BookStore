@@ -67,8 +67,16 @@ router.get('/', async (req, res) => {
       filter.category = req.query.category;
     }
 
+    let sortObj = { createdAt: -1 };
+    if (req.query.sortField && req.query.sortDir) {
+      const dir = req.query.sortDir === 'desc' ? -1 : 1;
+      if (['title', 'price'].includes(req.query.sortField)) {
+        sortObj = { [req.query.sortField]: dir };
+      }
+    }
+
     const [books, total] = await Promise.all([
-      Book.find(filter).populate('category').sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Book.find(filter).populate('category').sort(sortObj).skip(skip).limit(limit),
       Book.countDocuments(filter),
     ]);
 
