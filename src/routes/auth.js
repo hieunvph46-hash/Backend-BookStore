@@ -1,5 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const { userToClient } = require('../models/User');
 const { authRequired } = require('../middleware/auth');
@@ -101,6 +102,13 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    if (user.status === 'banned') {
+      return res.status(403).json({ error: 'Tài khoản đã bị khóa vĩnh viễn' });
+    }
+    if (user.status === 'suspended') {
+      return res.status(403).json({ error: 'Tài khoản đang bị tạm khóa' });
+    }
+
     const token = signToken(user._id.toString());
 
     return res.json({
@@ -156,6 +164,84 @@ router.put('/profile', authRequired, async (req, res) => {
       message: 'Cập nhật thông tin thành công',
       user: userToClient(user),
     });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+// In-memory token store for forgot password (simple, not production-ready)
+const resetTokens = new Map();
+
+router.post('/change-password', authRequired, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
+    }
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Không tìm thấy tài khoản' });
+    }
+    const ok = await user.comparePassword(currentPassword);
+    if (!ok) {
+      return res.status(400).json({ error: 'Mật khẩu hiện tại không đúng' });
+    }
+    user.password = newPassword;
+    await user.save();
+    return res.json({ message: 'Đổi mật khẩu thành công' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) {
+      return res.status(400).json({ error: 'Vui lòng nhập email' });
+    }
+    const user = await User.findOne({ email: String(email).trim().toLowerCase() });
+    if (!user) {
+      return res.status(200).json({ message: 'Nếu email tồn tại, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu' });
+    }
+    const token = crypto.randomBytes(32).toString('hex');
+    resetTokens.set(token, { userId: user._id.toString(), expires: Date.now() + 3600000 });
+    return res.json({
+      message: 'Mã đặt lại mật khẩu đã được tạo',
+      resetToken: token,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body || {};
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Thiếu thông tin' });
+    }
+    const data = resetTokens.get(token);
+    if (!data || data.expires < Date.now()) {
+      return res.status(400).json({ error: 'Mã đặt lại không hợp lệ hoặc đã hết hạn' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự' });
+    }
+    const user = await User.findById(data.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Không tìm thấy tài khoản' });
+    }
+    user.password = newPassword;
+    await user.save();
+    resetTokens.delete(token);
+    return res.json({ message: 'Đặt lại mật khẩu thành công' });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Lỗi server' });

@@ -23,8 +23,11 @@ router.get('/', async (req, res) => {
         { lastName: { $regex: q, $options: 'i' } },
       ];
     }
-    if (req.query.role && ['user', 'admin'].includes(req.query.role)) {
+    if (req.query.role && ['user', 'staff', 'admin'].includes(req.query.role)) {
       filter.role = req.query.role;
+    }
+    if (req.query.status && ['active', 'banned', 'suspended'].includes(req.query.status)) {
+      filter.status = req.query.status;
     }
 
     const [users, total] = await Promise.all([
@@ -74,7 +77,7 @@ router.delete('/:id', async (req, res) => {
 router.patch('/:id/role', async (req, res) => {
   try {
     const { role } = req.body || {};
-    if (!role || !['user', 'admin'].includes(role)) {
+    if (!role || !['user', 'staff', 'admin'].includes(role)) {
       return res.status(400).json({ error: 'Role không hợp lệ' });
     }
     const user = await User.findById(req.params.id);
@@ -87,6 +90,28 @@ router.patch('/:id/role', async (req, res) => {
     user.role = role;
     await user.save();
     return res.json({ message: 'Đã cập nhật vai trò', user: userToClient(user) });
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ error: 'Id không hợp lệ' });
+  }
+});
+
+router.patch('/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body || {};
+    if (!status || !['active', 'banned', 'suspended'].includes(status)) {
+      return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
+    }
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'Không tìm thấy tài khoản' });
+    }
+    if (user._id.toString() === req.userId) {
+      return res.status(400).json({ error: 'Không thể thay đổi trạng thái của chính mình' });
+    }
+    user.status = status;
+    await user.save();
+    return res.json({ message: 'Đã cập nhật trạng thái', user: userToClient(user) });
   } catch (err) {
     console.error(err);
     return res.status(400).json({ error: 'Id không hợp lệ' });
