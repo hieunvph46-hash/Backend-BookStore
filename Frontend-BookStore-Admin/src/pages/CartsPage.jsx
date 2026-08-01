@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
-import { useToast } from '../components/Toast';
+import { useToast } from '../components/toastContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 function formatVND(n) { return (n || 0).toLocaleString('vi-VN') + ' đ'; }

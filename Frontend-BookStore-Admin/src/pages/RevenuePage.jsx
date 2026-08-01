@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client';
 
 function formatVND(n) { return (n || 0).toLocaleString('vi-VN') + ' đ'; }
@@ -24,7 +24,7 @@ export default function RevenuePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -41,9 +41,9 @@ export default function RevenuePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [groupBy]);
 
-  useEffect(() => { load(); }, [groupBy]);
+  useEffect(() => { load(); }, [load]);
 
   const maxRevenue = Math.max(...revenue.map((r) => r.revenue), 1);
 

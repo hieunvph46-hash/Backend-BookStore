@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
-import { useToast } from '../components/Toast';
+import { useToast } from '../components/toastContext';
 
 const emptyForm = {
   title: '',
@@ -71,13 +71,9 @@ export default function ProductFormPage() {
 
     try {
       if (isEdit) {
-        await api.put(`/api/admin/books/${id}`, fd, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        await api.put(`/api/admin/books/${id}`, fd);
       } else {
-        await api.post('/api/admin/books', fd, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        await api.post('/api/admin/books', fd);
       }
       toast(isEdit ? 'Đã cập nhật sách' : 'Đã thêm sách', 'success');
       navigate('/products');
