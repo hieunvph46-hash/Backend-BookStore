@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client';
+import { Package, ShoppingBag, Wallet, Users } from 'lucide-react';
 
 function formatVND(n) { return (n || 0).toLocaleString('vi-VN') + ' đ'; }
 
@@ -65,14 +66,17 @@ export default function RevenuePage() {
         <>
           <div className="stats-grid">
             {[
-              { label: 'Tổng doanh thu', value: formatVND(overview.totalRevenue) },
-              { label: 'Đơn hàng', value: overview.totalOrders },
-              { label: 'Người dùng', value: overview.totalUsers },
-              { label: 'Sản phẩm', value: overview.totalBooks },
+              { label: 'Tổng doanh thu', value: formatVND(overview.totalRevenue), icon: Wallet, tone: 'green' },
+              { label: 'Đơn hàng', value: overview.totalOrders, icon: ShoppingBag, tone: 'violet' },
+              { label: 'Người dùng', value: overview.totalUsers, icon: Users, tone: 'amber' },
+              { label: 'Sản phẩm', value: overview.totalBooks, icon: Package, tone: 'blue' },
             ].map((s) => (
-              <div key={s.label} className="stat-card card">
-                <span className="stat-label">{s.label}</span>
-                <span className="stat-value">{s.value}</span>
+              <div key={s.label} className="card stat-card tone-grey" style={{ background: `var(--${s.tone}-soft)` }}>
+                <div className="stat-icon" style={{ background: 'var(--primary-100)', color: 'var(--primary)' }}>
+                  <s.icon size={22} />
+                </div>
+                <div className="stat-value">{s.value}</div>
+                <div className="stat-label">{s.label}</div>
               </div>
             ))}
           </div>

@@ -35,8 +35,9 @@ function parseBookFields(body) {
   const author = body.author != null ? String(body.author).trim() : '';
   const description = body.description != null ? String(body.description).trim() : '';
   const price = body.price != null ? Number(body.price) : NaN;
+  const stock = body.stock != null ? Number(body.stock) : NaN;
   const category = body.category || body.categoryId || '';
-  return { title, author, description, price, category };
+  return { title, author, description, price, stock, category };
 }
 
 function coverFromRequest(req) {
@@ -104,7 +105,7 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', upload.single('coverImage'), async (req, res) => {
   try {
-    const { title, author, description, price, category } = parseBookFields(req.body);
+    const { title, author, description, price, stock, category } = parseBookFields(req.body);
     if (!title || !author) {
       return res.status(400).json({ error: 'Vui lòng nhập tiêu đề và tác giả' });
     }
@@ -125,6 +126,7 @@ router.post('/', upload.single('coverImage'), async (req, res) => {
       author,
       description,
       price,
+      stock: Number.isNaN(stock) || stock < 0 ? 50 : Math.round(stock),
       category,
       coverImage: cover,
     });
@@ -144,11 +146,12 @@ router.put('/:id', upload.single('coverImage'), async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy sách' });
     }
 
-    const { title, author, description, price, category } = parseBookFields(req.body);
+    const { title, author, description, price, stock, category } = parseBookFields(req.body);
     if (title) book.title = title;
     if (author) book.author = author;
     if (req.body.description !== undefined) book.description = description;
     if (!Number.isNaN(price) && price >= 0) book.price = price;
+    if (!Number.isNaN(stock) && stock >= 0) book.stock = Math.round(stock);
 
     if (category) {
       if (!mongoose.Types.ObjectId.isValid(category)) {
@@ -171,6 +174,25 @@ router.put('/:id', upload.single('coverImage'), async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: err.message || 'Lỗi server' });
+  }
+});
+
+router.patch('/:id/stock', async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+    if (!book) {
+      return res.status(404).json({ error: 'Không tìm thấy sách' });
+    }
+    const { quantity } = req.body || {};
+    const qty = Math.max(1, parseInt(quantity, 10) || 1);
+    book.stock = (book.stock || 0) + qty;
+    await book.save();
+    const populated = await Book.findById(book._id).populate('category');
+    const payload = bookToClient(populated, populated.category);
+    return res.json({ message: 'Đã nhập thêm hàng', book: payload, data: payload });
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ error: 'Id sách không hợp lệ' });
   }
 });
 

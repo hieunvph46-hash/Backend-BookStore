@@ -7,6 +7,7 @@ const bookSchema = new mongoose.Schema(
     description: { type: String, default: '' },
     coverImage: { type: String, default: '' },
     price: { type: Number, required: true, min: 0 },
+    stock: { type: Number, default: 50, min: 0 },
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
   },
   { timestamps: true }
@@ -29,6 +30,7 @@ function bookToClient(doc, categoryDoc) {
     coverImage: doc.coverImage || '',
     image: doc.coverImage || '',
     price: doc.price,
+    stock: doc.stock ?? 0,
     category,
   };
 }

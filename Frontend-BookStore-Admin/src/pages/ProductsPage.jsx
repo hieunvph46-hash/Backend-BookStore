@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api, assetUrl } from '../api/client';
 import { useToast } from '../components/toastContext';
 import Pagination from '../components/Pagination';
@@ -15,9 +15,10 @@ const SORT_OPTIONS = [
 
 export default function ProductsPage() {
   const toast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [books, setBooks] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [sort, setSort] = useState('');
   const [page, setPage] = useState(1);
@@ -27,6 +28,14 @@ export default function ProductsPage() {
   const [error, setError] = useState('');
 
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const urlSearch = searchParams.get('search') || '';
+  useEffect(() => {
+    setSearch(urlSearch);
+    setPage(1);
+    load(1, { search: urlSearch });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlSearch]);
 
   useEffect(() => {
     api.get('/api/categories').then(({ data }) => {
@@ -76,6 +85,7 @@ export default function ProductsPage() {
   const onSearch = () => {
     setPage(1);
     load(1, buildFilters());
+    if (search.trim()) setSearchParams({ search: search.trim() });
   };
 
   const onClearFilters = () => {
@@ -151,6 +161,7 @@ export default function ProductsPage() {
                 <th className="sortable" onClick={() => toggleSort('price')}>
                   Giá <span className="sort-icon">{sort.startsWith('price') ? (sort === 'price_asc' ? '▲' : '▼') : ''}</span>
                 </th>
+                <th>Tồn kho</th>
                 <th />
               </tr>
             </thead>
@@ -169,6 +180,11 @@ export default function ProductsPage() {
                   <td>{book.author}</td>
                   <td><span className="badge badge-user">{book.category?.name || '—'}</span></td>
                   <td><strong>{(book.price || 0).toLocaleString('vi-VN')} đ</strong></td>
+                  <td>
+                    <span className={`stock-pill ${(book.stock ?? 50) <= 5 ? 'low' : (book.stock ?? 50) <= 10 ? 'medium' : 'ok'}`}>
+                      {(book.stock ?? 50)} cuốn
+                    </span>
+                  </td>
                   <td className="actions">
                     <Link to={`/products/${book.id}/edit`} className="btn icon-btn primary" title="Sửa">✏️</Link>
                     <button type="button" className="btn icon-btn danger" title="Xóa" onClick={() => setDeleteTarget(book)}>🗑️</button>
@@ -176,7 +192,7 @@ export default function ProductsPage() {
                 </tr>
               ))}
               {books.length === 0 ? (
-                <tr><td colSpan={7} className="muted" style={{textAlign:'center',padding:'2rem'}}>Không có dữ liệu</td></tr>
+                <tr><td colSpan={8} className="muted" style={{textAlign:'center',padding:'2rem'}}>Không có dữ liệu</td></tr>
               ) : null}
             </tbody>
           </table>

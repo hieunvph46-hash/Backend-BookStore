@@ -8,6 +8,7 @@ const emptyForm = {
   author: '',
   description: '',
   price: '',
+  stock: '',
   category: '',
   coverImage: '',
 };
@@ -41,6 +42,7 @@ export default function ProductFormPage() {
           author: book.author || '',
           description: book.description || '',
           price: String(book.price ?? ''),
+          stock: String(book.stock ?? ''),
           category: book.category?.id || book.category?._id || '',
           coverImage: book.coverImage || book.image || '',
         });
@@ -62,6 +64,7 @@ export default function ProductFormPage() {
     fd.append('author', form.author);
     fd.append('description', form.description);
     fd.append('price', form.price);
+    fd.append('stock', form.stock || '50');
     fd.append('category', form.category);
     if (file) {
       fd.append('coverImage', file);
@@ -119,6 +122,10 @@ export default function ProductFormPage() {
         <label>
           Giá (VNĐ) *
           <input name="price" type="number" min="0" step="1000" value={form.price} onChange={onChange} required />
+        </label>
+        <label>
+          Số lượng tồn kho
+          <input name="stock" type="number" min="0" step="1" value={form.stock} onChange={onChange} placeholder="50" />
         </label>
         <label>
           Mô tả

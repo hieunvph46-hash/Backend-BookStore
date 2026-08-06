@@ -13,6 +13,8 @@ const orderRoutes = require('./routes/orders');
 const adminBookRoutes = require('./routes/admin/books');
 const adminOrderRoutes = require('./routes/admin/orders');
 const adminUserRoutes = require('./routes/admin/users');
+const adminCategoryRoutes = require('./routes/admin/categories');
+const adminDiscountRoutes = require('./routes/admin/discounts');
 const adminStatsRoutes = require('./routes/admin/stats');
 const favoriteRoute = require('./routes/favorite');
 
@@ -40,6 +42,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/admin/books', adminBookRoutes);
 app.use('/api/admin/orders', adminOrderRoutes);
 app.use('/api/admin/users', adminUserRoutes);
+app.use('/api/admin/categories', adminCategoryRoutes);
+app.use('/api/admin/discounts', adminDiscountRoutes);
 app.use('/api/admin/stats', adminStatsRoutes);
 app.use('/api/favorites', favoriteRoute);
 
@@ -51,7 +55,11 @@ async function start() {
   });
 }
 
-start().catch((err) => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
-});
+if (require.main === module) {
+  start().catch((err) => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  });
+}
+
+module.exports = app;

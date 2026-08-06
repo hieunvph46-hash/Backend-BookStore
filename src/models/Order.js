@@ -26,6 +26,8 @@ const orderSchema = new mongoose.Schema(
       default: 'pending',
     },
     shippingFee: { type: Number, default: 30000 },
+    discountCode: { type: String, default: '' },
+    discountAmount: { type: Number, default: 0 },
     totalAmount: { type: Number, required: true },
     items: [orderItemSchema],
   },
@@ -54,6 +56,9 @@ function orderToClient(doc) {
     shippingAddress: doc.address,
     address: doc.address,
     phone: doc.phone,
+    shippingFee: doc.shippingFee,
+    discountCode: doc.discountCode,
+    discountAmount: doc.discountAmount,
     totalAmount: doc.totalAmount,
     items,
   };
