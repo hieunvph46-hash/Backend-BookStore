@@ -5,6 +5,7 @@ const { orderToClient } = require('../models/Order');
 const Book = require('../models/Book');
 const Discount = require('../models/Discount');
 const { authRequired } = require('../middleware/auth');
+const { populateCart, buildCartResponse } = require('../services/cartService');
 
 const router = express.Router();
 const SHIPPING_FEE = 30000;
@@ -17,29 +18,54 @@ router.post('/', async (req, res) => {
     if (!fullName || !address || !phone) {
       return res.status(400).json({ error: 'Vui lòng nhập đầy đủ họ tên, địa chỉ và số điện thoại' });
     }
-    if (!Array.isArray(items) || !items.length) {
-      return res.status(400).json({ error: 'Đơn hàng không có sản phẩm' });
-    }
 
     const orderItems = [];
     let subtotal = 0;
-    for (const item of items) {
-      const bookId = item.bookId || item.book;
-      const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
-      if (!bookId || !mongoose.Types.ObjectId.isValid(bookId)) continue;
-      const book = await Book.findById(bookId);
-      if (!book) continue;
-      const lineSubtotal = book.price * quantity;
-      subtotal += lineSubtotal;
-      orderItems.push({
-        book: book._id,
-        quantity,
-        price: book.price,
-        subtotal: lineSubtotal,
-      });
-    }
-    if (!orderItems.length) {
-      return res.status(400).json({ error: 'Đơn hàng không có sản phẩm hợp lệ' });
+    let cart = null;
+
+    if (Array.isArray(items) && items.length) {
+      for (const item of items) {
+        const bookId = item.bookId || item.book;
+        const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
+        if (!bookId || !mongoose.Types.ObjectId.isValid(bookId)) continue;
+        const book = await Book.findById(bookId);
+        if (!book) continue;
+        const lineSubtotal = book.price * quantity;
+        subtotal += lineSubtotal;
+        orderItems.push({
+          book: book._id,
+          quantity,
+          price: book.price,
+          subtotal: lineSubtotal,
+        });
+      }
+      if (!orderItems.length) {
+        return res.status(400).json({ error: 'Đơn hàng không có sản phẩm hợp lệ' });
+      }
+    } else {
+      cart = await require('../models/Cart').findOne({ user: req.userId });
+      if (!cart || !cart.items.length) {
+        return res.status(400).json({ error: 'Giỏ hàng trống' });
+      }
+      const populated = await populateCart(cart);
+      const cartData = buildCartResponse(populated);
+      if (!cartData.items.length) {
+        return res.status(400).json({ error: 'Giỏ hàng trống' });
+      }
+      for (const line of cartData.items) {
+        const book = await Book.findById(line.book.id);
+        if (!book) continue;
+        orderItems.push({
+          book: book._id,
+          quantity: line.quantity,
+          price: line.price,
+          subtotal: line.subtotal,
+        });
+        subtotal += line.subtotal;
+      }
+      if (!orderItems.length) {
+        return res.status(400).json({ error: 'Giỏ hàng không có sản phẩm hợp lệ' });
+      }
     }
 
     const now = Date.now();
