@@ -1,10 +1,9 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const { orderToClient } = require('../models/Order');
 const Book = require('../models/Book');
-const Cart = require('../models/Cart');
 const { authRequired } = require('../middleware/auth');
-const { populateCart, buildCartResponse } = require('../services/cartService');
 
 const router = express.Router();
 const SHIPPING_FEE = 30000;
@@ -13,36 +12,35 @@ router.use(authRequired);
 
 router.post('/', async (req, res) => {
   try {
-    const { fullName, address, city, postalCode, phone, paymentMethod, notes } = req.body || {};
+    const { fullName, address, city, postalCode, phone, paymentMethod, notes, items } = req.body || {};
     if (!fullName || !address || !phone) {
       return res.status(400).json({ error: 'Vui lòng nhập đầy đủ họ tên, địa chỉ và số điện thoại' });
     }
-
-    const cart = await Cart.findOne({ user: req.userId });
-    if (!cart || !cart.items.length) {
-      return res.status(400).json({ error: 'Giỏ hàng trống' });
-    }
-
-    const populated = await populateCart(cart);
-    const cartData = buildCartResponse(populated);
-    if (!cartData.items.length) {
-      return res.status(400).json({ error: 'Giỏ hàng trống' });
+    if (!Array.isArray(items) || !items.length) {
+      return res.status(400).json({ error: 'Đơn hàng không có sản phẩm' });
     }
 
     const orderItems = [];
-    for (const line of cartData.items) {
-      const bookId = line.book.id;
+    let subtotal = 0;
+    for (const item of items) {
+      const bookId = item.bookId || item.book;
+      const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
+      if (!bookId || !mongoose.Types.ObjectId.isValid(bookId)) continue;
       const book = await Book.findById(bookId);
       if (!book) continue;
+      const lineSubtotal = book.price * quantity;
+      subtotal += lineSubtotal;
       orderItems.push({
         book: book._id,
-        quantity: line.quantity,
-        price: line.price,
-        subtotal: line.subtotal,
+        quantity,
+        price: book.price,
+        subtotal: lineSubtotal,
       });
     }
+    if (!orderItems.length) {
+      return res.status(400).json({ error: 'Đơn hàng không có sản phẩm hợp lệ' });
+    }
 
-    const subtotal = cartData.totalAmount;
     const totalAmount = subtotal + SHIPPING_FEE;
 
     const order = await Order.create({
@@ -59,9 +57,6 @@ router.post('/', async (req, res) => {
       items: orderItems,
       status: 'pending',
     });
-
-    cart.items = [];
-    await cart.save();
 
     const full = await Order.findById(order._id).populate({
       path: 'items.book',
