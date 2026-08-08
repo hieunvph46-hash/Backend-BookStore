@@ -176,7 +176,7 @@ router.put('/:id', upload.single('coverImage'), async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy sách' });
     }
 
-   const book = await Book.create({
+   const newBook = await Book.create({
   title,
   author,
   description,
