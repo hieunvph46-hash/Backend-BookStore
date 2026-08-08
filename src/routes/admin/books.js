@@ -216,6 +216,25 @@ router.put('/:id', upload.single('coverImage'), async (req, res) => {
   }
 });
 
+router.patch('/:id/stock', async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+    if (!book) {
+      return res.status(404).json({ error: 'Không tìm thấy sách' });
+    }
+    const { quantity } = req.body || {};
+    const qty = Math.max(1, parseInt(quantity, 10) || 1);
+    book.stock = (book.stock || 0) + qty;
+    await book.save();
+    const populated = await Book.findById(book._id).populate('category');
+    const payload = bookToClient(populated, populated.category);
+    return res.json({ message: 'Đã nhập thêm hàng', book: payload, data: payload });
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ error: 'Id sách không hợp lệ' });
+  }
+});
+
 router.delete('/:id', async (req, res) => {
   try {
     const book = await Book.findByIdAndDelete(req.params.id);

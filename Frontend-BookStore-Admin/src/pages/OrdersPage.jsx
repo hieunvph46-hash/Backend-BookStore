@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../api/client';
-import { useToast } from '../components/Toast';
+import { useToast } from '../components/toastContext';
 import Pagination from '../components/Pagination';
 
 const STATUS_OPTIONS = [
@@ -31,13 +31,11 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const load = async (p = page) => {
+  const load = useCallback(async (p, filters = {}) => {
     setLoading(true);
     setError('');
     try {
-      const params = { page: p, limit };
-      if (filter) params.status = filter;
-      if (search.trim()) params.search = search.trim();
+      const params = { page: p, limit, ...filters };
       const { data } = await api.get('/api/admin/orders', { params });
       setOrders(data.orders || data.data || []);
       setTotal(data.total || 0);
@@ -46,11 +44,26 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const buildFilters = useCallback(() => {
+    const params = {};
+    if (filter) params.status = filter;
+    if (search.trim()) params.search = search.trim();
+    return params;
+  }, [filter, search]);
+
+  const filtersRef = useRef({});
+  filtersRef.current = useMemo(() => buildFilters(), [buildFilters]);
 
   useEffect(() => {
-    load(1);
-  }, [filter]);
+    load(1, filtersRef.current);
+  }, [filter, load]);
+
+  const onSearch = () => {
+    setPage(1);
+    load(1, buildFilters());
+  };
 
   const onStatusChange = async (orderId, status) => {
     try {
@@ -78,7 +91,7 @@ export default function OrdersPage() {
       <div className="toolbar card">
         <input type="search" placeholder="Tìm theo tên, SĐT, địa chỉ…" value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && load(1)} />
+          onKeyDown={(e) => e.key === 'Enter' && onSearch()} />
         <label className="status-row">
           Trạng thái
           <select value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }}>
@@ -130,7 +143,7 @@ export default function OrdersPage() {
             </article>
           ))}
           {orders.length === 0 ? <p className="muted" style={{textAlign:'center',padding:'2rem'}}>Không có dữ liệu</p> : null}
-          <Pagination page={page} limit={limit} total={total} onChange={(p) => { setPage(p); load(p); }} />
+          <Pagination page={page} limit={limit} total={total} onChange={(p) => { setPage(p); load(p, buildFilters()); }} />
         </div>
       )}
     </div>

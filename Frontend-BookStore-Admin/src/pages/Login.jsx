@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/authContext';
+import { BookOpen } from 'lucide-react';
 
 export default function Login() {
   const { login } = useAuth();
@@ -27,8 +28,13 @@ export default function Login() {
   return (
     <div className="login-page">
       <form className="card login-card" onSubmit={onSubmit}>
+        <div className="login-logo">
+          <div className="brand-logo" style={{ width: 48, height: 48, borderRadius: 14 }}>
+            <BookOpen size={24} />
+          </div>
+        </div>
         <h1>Đăng nhập Admin</h1>
-        <p className="muted">Quản lý sản phẩm, đơn hàng và giỏ hàng</p>
+        <p className="muted">Quản lý sản phẩm, danh mục, đơn hàng và người dùng</p>
         {error ? <p className="error">{error}</p> : null}
         <label>
           Email

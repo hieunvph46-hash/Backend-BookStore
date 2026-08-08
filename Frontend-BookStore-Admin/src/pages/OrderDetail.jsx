@@ -49,6 +49,12 @@ export default function OrderDetail({ order, onClose }) {
                 <td colSpan={3} style={{textAlign:'right',fontWeight:600}}>Phí ship:</td>
                 <td>{formatVND(order.shippingFee || 30000)}</td>
               </tr>
+              {order.discountCode ? (
+                <tr>
+                  <td colSpan={3} style={{textAlign:'right',fontWeight:600,color:'#16a34a'}}>Giảm giá ({order.discountCode}):</td>
+                  <td style={{color:'#16a34a',fontWeight:600}}>- {formatVND(order.discountAmount)}</td>
+                </tr>
+              ) : null}
               <tr>
                 <td colSpan={3} style={{textAlign:'right',fontWeight:700,fontSize:'1.1rem'}}>Tổng:</td>
                 <td style={{fontWeight:700,fontSize:'1.1rem'}}>{formatVND(order.totalAmount)}</td>
