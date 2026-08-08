@@ -31,12 +31,36 @@ const upload = multer({
 });
 
 function parseBookFields(body) {
-  const title = body.title != null ? String(body.title).trim() : '';
-  const author = body.author != null ? String(body.author).trim() : '';
-  const description = body.description != null ? String(body.description).trim() : '';
-  const price = body.price != null ? Number(body.price) : NaN;
+  const title = body.title != null
+    ? String(body.title).trim()
+    : '';
+
+  const author = body.author != null
+    ? String(body.author).trim()
+    : '';
+
+  const description = body.description != null
+    ? String(body.description).trim()
+    : '';
+
+  const preview = body.preview != null
+    ? String(body.preview).trim()
+    : '';
+
+  const price = body.price != null
+    ? Number(body.price)
+    : NaN;
+
   const category = body.category || body.categoryId || '';
-  return { title, author, description, price, category };
+
+  return {
+    title,
+    author,
+    description,
+    preview,
+    price,
+    category
+  };
 }
 
 function coverFromRequest(req) {
@@ -104,7 +128,14 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', upload.single('coverImage'), async (req, res) => {
   try {
-    const { title, author, description, price, category } = parseBookFields(req.body);
+    const {
+  title,
+  author,
+  description,
+  preview,
+  price,
+  category
+} = parseBookFields(req.body);
     if (!title || !author) {
       return res.status(400).json({ error: 'Vui lòng nhập tiêu đề và tác giả' });
     }
@@ -121,13 +152,14 @@ router.post('/', upload.single('coverImage'), async (req, res) => {
 
     const cover = coverFromRequest(req) || '';
     const book = await Book.create({
-      title,
-      author,
-      description,
-      price,
-      category,
-      coverImage: cover,
-    });
+  title,
+  author,
+  description,
+  preview,
+  price,
+  category,
+  coverImage: cover,
+});
     const populated = await Book.findById(book._id).populate('category');
     const payload = bookToClient(populated, populated.category);
     return res.status(201).json({ message: 'Đã thêm sách', book: payload, data: payload });
@@ -144,11 +176,21 @@ router.put('/:id', upload.single('coverImage'), async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy sách' });
     }
 
-    const { title, author, description, price, category } = parseBookFields(req.body);
+   const book = await Book.create({
+  title,
+  author,
+  description,
+  preview,
+  price,
+  category,
+  coverImage: cover,
+});
     if (title) book.title = title;
     if (author) book.author = author;
     if (req.body.description !== undefined) book.description = description;
+    if (req.body.preview !== undefined) book.preview = preview;
     if (!Number.isNaN(price) && price >= 0) book.price = price;
+    
 
     if (category) {
       if (!mongoose.Types.ObjectId.isValid(category)) {
