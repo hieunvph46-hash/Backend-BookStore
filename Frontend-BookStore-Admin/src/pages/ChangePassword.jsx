@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api/client';
-import { useToast } from '../components/Toast';
+import { useToast } from '../components/toastContext';
 
 export default function ChangePassword() {
   const toast = useToast();

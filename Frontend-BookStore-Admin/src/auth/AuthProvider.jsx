@@ -1,14 +1,21 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { api } from '../api/client';
+import { AuthContext } from './authContext';
 
-const AuthContext = createContext(null);
+function readStoredUser() {
+  const raw = localStorage.getItem('admin_user');
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    localStorage.removeItem('admin_user');
+    return null;
+  }
+}
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('admin_token'));
-  const [user, setUser] = useState(() => {
-    const raw = localStorage.getItem('admin_user');
-    return raw ? JSON.parse(raw) : null;
-  });
+  const [user, setUser] = useState(readStoredUser);
 
   const login = async (email, password) => {
     const { data } = await api.post('/api/auth/login', { email, password });
@@ -41,10 +48,4 @@ export function AuthProvider({ children }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
 }

@@ -21,7 +21,7 @@ export default function Settings() {
         <div className="card" style={{maxWidth:560,marginBottom:'1rem'}}>
           <h3>Thông tin tài khoản</h3>
           <div style={{display:'flex',alignItems:'center',gap:'1rem',marginTop:'0.5rem'}}>
-            <div className="sidebar-avatar" style={{width:56,height:56,fontSize:'1.3rem'}}>
+            <div className="avatar" style={{ width: 56, height: 56, fontSize: '1.3rem' }}>
               {((profile.firstName?.[0] || '') + (profile.lastName?.[0] || '')).toUpperCase() || profile.email?.[0]?.toUpperCase()}
             </div>
             <div>
@@ -51,10 +51,10 @@ export default function Settings() {
       <div className="card" style={{maxWidth:560}}>
         <h3>Hướng dẫn nhanh</h3>
         <ul style={{paddingLeft:'1.2rem',lineHeight:2}}>
-          <li><strong>Sản phẩm</strong> — Thêm, sửa, xóa sách. Upload ảnh bìa, tìm kiếm, lọc danh mục, sắp xếp.</li>
+          <li><strong>Sản phẩm</strong> — Thêm, sửa, xóa sách. Upload ảnh bìa, tìm kiếm, lọc danh mục, sắp xếp, quản lý tồn kho.</li>
+          <li><strong>Danh mục</strong> — Quản lý các danh mục phân loại sách.</li>
           <li><strong>Đơn hàng</strong> — Xem danh sách, lọc trạng thái, cập nhật trạng thái giao hàng.</li>
-          <li><strong>Doanh thu</strong> — Thống kê doanh thu biểu đồ, xuất CSV, xem top sản phẩm bán chạy.</li>
-          <li><strong>Giỏ hàng</strong> — Xem giỏ hàng người dùng, cập nhật số lượng, xóa sản phẩm, thanh toán hộ.</li>
+          <li><strong>Thống kê</strong> — Doanh thu biểu đồ, xuất CSV, top sản phẩm bán chạy, dashboard tổng quan.</li>
           <li><strong>Tài khoản</strong> — Quản lý người dùng, phân quyền, khóa/tạm khóa tài khoản.</li>
         </ul>
       </div>

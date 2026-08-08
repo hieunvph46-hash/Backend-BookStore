@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../api/client';
-import { useToast } from '../components/Toast';
+import { useToast } from '../components/toastContext';
 import Pagination from '../components/Pagination';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -34,14 +34,11 @@ export default function UsersPage() {
 
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const load = async (p = page) => {
+  const load = useCallback(async (p, filters = {}) => {
     setLoading(true);
     setError('');
     try {
-      const params = { page: p, limit };
-      if (search.trim()) params.search = search.trim();
-      if (roleFilter) params.role = roleFilter;
-      if (statusFilter) params.status = statusFilter;
+      const params = { page: p, limit, ...filters };
       const { data } = await api.get('/api/admin/users', { params });
       setUsers(data.users || data.data || []);
       setTotal(data.total || 0);
@@ -50,9 +47,27 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { load(1); }, [roleFilter, statusFilter]);
+  const buildFilters = useCallback(() => {
+    const params = {};
+    if (search.trim()) params.search = search.trim();
+    if (roleFilter) params.role = roleFilter;
+    if (statusFilter) params.status = statusFilter;
+    return params;
+  }, [search, roleFilter, statusFilter]);
+
+  const filtersRef = useRef({});
+  filtersRef.current = useMemo(() => buildFilters(), [buildFilters]);
+
+  useEffect(() => {
+    load(1, filtersRef.current);
+  }, [roleFilter, statusFilter, load]);
+
+  const onSearch = () => {
+    setPage(1);
+    load(1, buildFilters());
+  };
 
   const nextRole = (current) => {
     const order = ['user', 'staff', 'admin'];
@@ -113,7 +128,7 @@ export default function UsersPage() {
       <div className="toolbar card">
         <input type="search" placeholder="Tìm theo tên, email…" value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && (setPage(1), load(1))} />
+          onKeyDown={(e) => e.key === 'Enter' && onSearch()} />
         <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}>
           <option value="">Tất cả vai trò</option>
           <option value="user">Người dùng</option>
@@ -126,7 +141,7 @@ export default function UsersPage() {
           <option value="suspended">Tạm khóa</option>
           <option value="banned">Đã khóa</option>
         </select>
-        <button type="button" className="btn secondary" onClick={() => load(1)}>Tìm</button>
+        <button type="button" className="btn secondary" onClick={onSearch}>Tìm</button>
       </div>
 
       {error ? <p className="error">{error}</p> : null}
@@ -186,7 +201,7 @@ export default function UsersPage() {
               ) : null}
             </tbody>
           </table>
-          <Pagination page={page} limit={limit} total={total} onChange={(p) => { setPage(p); load(p); }} />
+          <Pagination page={page} limit={limit} total={total} onChange={(p) => { setPage(p); load(p, buildFilters()); }} />
         </div>
       )}
 
